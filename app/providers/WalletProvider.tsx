@@ -1,0 +1,44 @@
+'use client'
+
+import { FC, ReactNode, useMemo } from 'react'
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
+import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
+import {
+  PhantomWalletAdapter,
+  SolflareWalletAdapter,
+} from '@solana/wallet-adapter-wallets'
+import { clusterApiUrl } from '@solana/web3.js'
+
+interface WalletContextProviderProps {
+  children: ReactNode
+}
+
+export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children }) => {
+  // Use custom RPC endpoint from environment variable, fallback to public mainnet
+  const endpoint = useMemo(() => {
+    const customRpc = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT
+    if (customRpc) {
+      return customRpc
+    }
+    return clusterApiUrl(WalletAdapterNetwork.Mainnet)
+  }, [])
+
+  const wallets = useMemo(
+    () => [
+      new PhantomWalletAdapter(),
+      new SolflareWalletAdapter(),
+    ],
+    []
+  )
+
+  return (
+    <ConnectionProvider endpoint={endpoint}>
+      <WalletProvider wallets={wallets} autoConnect>
+        <WalletModalProvider>
+          {children}
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
+  )
+}
